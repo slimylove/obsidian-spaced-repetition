@@ -34,7 +34,7 @@ export function parse(
 
             cardText = "";
             continue;
-        } else if (lines[i].startsWith("<!--") && !lines[i].startsWith("<!--SR:")) {
+        } else if (lines[i].startsWith("<!--") && !lines[i].startsWith("<!--SR:") && lines[i] !== multilineCardSeparator) {
             while (i + 1 < lines.length && !lines[i].includes("-->")) i++;
             i++;
             continue;
