@@ -1,12 +1,12 @@
 import { Notice, PluginSettingTab, Setting, App, Platform } from "obsidian";
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import h from "vhtml";
-
 import type SRPlugin from "src/main";
 import { t } from "src/lang/helpers";
 
 export interface SRSettings {
     // flashcards
+    flashcardEasyText: string;
+    flashcardGoodText: string;
+    flashcardHardText: string;
     flashcardTags: string[];
     convertFoldersToDecks: boolean;
     cardCommentOnSameLine: boolean;
@@ -18,17 +18,21 @@ export interface SRSettings {
     randomizeCardOrder: boolean;
     convertHighlightsToClozes: boolean;
     convertBoldTextToClozes: boolean;
-    singlelineCardSeparator: string;
-    singlelineReversedCardSeparator: string;
+    convertCurlyBracketsToClozes: boolean;
+    singleLineCardSeparator: string;
+    singleLineReversedCardSeparator: string;
     multilineCardSeparator: string;
     multilineReversedCardSeparator: string;
     // notes
+    enableNoteReviewPaneOnStartup: boolean;
     tagsToReview: string[];
     noteFoldersToIgnore: string[];
     openRandomNote: boolean;
     autoNextNote: boolean;
     disableFileMenuReviewOptions: boolean;
     maxNDaysNotesReviewQueue: number;
+    // UI preferences
+    initiallyExpandAllSubdecksInTree: boolean;
     // algorithm
     baseEase: number;
     lapsesIntervalChange: number;
@@ -41,6 +45,9 @@ export interface SRSettings {
 
 export const DEFAULT_SETTINGS: SRSettings = {
     // flashcards
+    flashcardEasyText: t("EASY"),
+    flashcardGoodText: t("GOOD"),
+    flashcardHardText: t("HARD"),
     flashcardTags: ["#flashcards"],
     convertFoldersToDecks: false,
     cardCommentOnSameLine: false,
@@ -52,17 +59,21 @@ export const DEFAULT_SETTINGS: SRSettings = {
     randomizeCardOrder: true,
     convertHighlightsToClozes: true,
     convertBoldTextToClozes: false,
-    singlelineCardSeparator: "::",
-    singlelineReversedCardSeparator: ":::",
+    convertCurlyBracketsToClozes: false,
+    singleLineCardSeparator: "::",
+    singleLineReversedCardSeparator: ":::",
     multilineCardSeparator: "?",
     multilineReversedCardSeparator: "??",
     // notes
+    enableNoteReviewPaneOnStartup: true,
     tagsToReview: ["#review"],
     noteFoldersToIgnore: [],
     openRandomNote: false,
     autoNextNote: false,
     disableFileMenuReviewOptions: false,
     maxNDaysNotesReviewQueue: 365,
+    // UI settings
+    initiallyExpandAllSubdecksInTree: false,
     // algorithm
     baseEase: 250,
     lapsesIntervalChange: 0.5,
@@ -93,7 +104,7 @@ export class SRSettingTab extends PluginSettingTab {
 
         containerEl.empty();
 
-        containerEl.createDiv().innerHTML = <h2>{t("SETTINGS_HEADER")}</h2>;
+        containerEl.createEl("h2", { text: `${t("SETTINGS_HEADER")}` });
 
         containerEl.createDiv().innerHTML = t("CHECK_WIKI", {
             wiki_url: "https://github.com/st3v3nmw/obsidian-spaced-repetition/wiki",
@@ -116,7 +127,7 @@ export class SRSettingTab extends PluginSettingTab {
                     })
             );
 
-        containerEl.createDiv().innerHTML = <h3>{t("FLASHCARDS")}</h3>;
+        containerEl.createEl("h3", { text: `${t("FLASHCARDS")}` });
 
         new Setting(containerEl)
             .setName(t("FLASHCARD_TAGS"))
@@ -267,14 +278,25 @@ export class SRSettingTab extends PluginSettingTab {
         );
 
         new Setting(containerEl)
+            .setName(t("CONVERT_CURLY_BRACKETS_TO_CLOZES"))
+            .addToggle((toggle) =>
+                toggle
+                    .setValue(this.plugin.data.settings.convertCurlyBracketsToClozes)
+                    .onChange(async (value) => {
+                        this.plugin.data.settings.convertCurlyBracketsToClozes = value;
+                        await this.plugin.savePluginData();
+                    })
+            );
+
+        new Setting(containerEl)
             .setName(t("INLINE_CARDS_SEPARATOR"))
             .setDesc(t("FIX_SEPARATORS_MANUALLY_WARNING"))
             .addText((text) =>
                 text
-                    .setValue(this.plugin.data.settings.singlelineCardSeparator)
+                    .setValue(this.plugin.data.settings.singleLineCardSeparator)
                     .onChange((value) => {
                         applySettingsUpdate(async () => {
-                            this.plugin.data.settings.singlelineCardSeparator = value;
+                            this.plugin.data.settings.singleLineCardSeparator = value;
                             await this.plugin.savePluginData();
                         });
                     })
@@ -284,8 +306,8 @@ export class SRSettingTab extends PluginSettingTab {
                     .setIcon("reset")
                     .setTooltip(t("RESET_DEFAULT"))
                     .onClick(async () => {
-                        this.plugin.data.settings.singlelineCardSeparator =
-                            DEFAULT_SETTINGS.singlelineCardSeparator;
+                        this.plugin.data.settings.singleLineCardSeparator =
+                            DEFAULT_SETTINGS.singleLineCardSeparator;
                         await this.plugin.savePluginData();
                         this.display();
                     });
@@ -296,10 +318,10 @@ export class SRSettingTab extends PluginSettingTab {
             .setDesc(t("FIX_SEPARATORS_MANUALLY_WARNING"))
             .addText((text) =>
                 text
-                    .setValue(this.plugin.data.settings.singlelineReversedCardSeparator)
+                    .setValue(this.plugin.data.settings.singleLineReversedCardSeparator)
                     .onChange((value) => {
                         applySettingsUpdate(async () => {
-                            this.plugin.data.settings.singlelineReversedCardSeparator = value;
+                            this.plugin.data.settings.singleLineReversedCardSeparator = value;
                             await this.plugin.savePluginData();
                         });
                     })
@@ -309,8 +331,8 @@ export class SRSettingTab extends PluginSettingTab {
                     .setIcon("reset")
                     .setTooltip(t("RESET_DEFAULT"))
                     .onClick(async () => {
-                        this.plugin.data.settings.singlelineReversedCardSeparator =
-                            DEFAULT_SETTINGS.singlelineReversedCardSeparator;
+                        this.plugin.data.settings.singleLineReversedCardSeparator =
+                            DEFAULT_SETTINGS.singleLineReversedCardSeparator;
                         await this.plugin.savePluginData();
                         this.display();
                     });
@@ -366,7 +388,85 @@ export class SRSettingTab extends PluginSettingTab {
                     });
             });
 
-        containerEl.createDiv().innerHTML = <h3>{t("NOTES")}</h3>;
+        new Setting(containerEl)
+            .setName(t("FLASHCARD_EASY_LABEL"))
+            .setDesc(t("FLASHCARD_EASY_DESC"))
+            .addText((text) =>
+                text.setValue(this.plugin.data.settings.flashcardEasyText).onChange((value) => {
+                    applySettingsUpdate(async () => {
+                        this.plugin.data.settings.flashcardEasyText = value;
+                        await this.plugin.savePluginData();
+                    });
+                })
+            )
+            .addExtraButton((button) => {
+                button
+                    .setIcon("reset")
+                    .setTooltip(t("RESET_DEFAULT"))
+                    .onClick(async () => {
+                        this.plugin.data.settings.flashcardEasyText =
+                            DEFAULT_SETTINGS.flashcardEasyText;
+                        await this.plugin.savePluginData();
+                        this.display();
+                    });
+            });
+
+        new Setting(containerEl)
+            .setName(t("FLASHCARD_GOOD_LABEL"))
+            .setDesc(t("FLASHCARD_GOOD_DESC"))
+            .addText((text) =>
+                text.setValue(this.plugin.data.settings.flashcardGoodText).onChange((value) => {
+                    applySettingsUpdate(async () => {
+                        this.plugin.data.settings.flashcardGoodText = value;
+                        await this.plugin.savePluginData();
+                    });
+                })
+            )
+            .addExtraButton((button) => {
+                button
+                    .setIcon("reset")
+                    .setTooltip(t("RESET_DEFAULT"))
+                    .onClick(async () => {
+                        this.plugin.data.settings.flashcardGoodText =
+                            DEFAULT_SETTINGS.flashcardGoodText;
+                        await this.plugin.savePluginData();
+                        this.display();
+                    });
+            });
+
+        new Setting(containerEl)
+            .setName(t("FLASHCARD_HARD_LABEL"))
+            .setDesc(t("FLASHCARD_HARD_DESC"))
+            .addText((text) =>
+                text.setValue(this.plugin.data.settings.flashcardHardText).onChange((value) => {
+                    applySettingsUpdate(async () => {
+                        this.plugin.data.settings.flashcardHardText = value;
+                        await this.plugin.savePluginData();
+                    });
+                })
+            )
+            .addExtraButton((button) => {
+                button
+                    .setIcon("reset")
+                    .setTooltip(t("RESET_DEFAULT"))
+                    .onClick(async () => {
+                        this.plugin.data.settings.flashcardHardText =
+                            DEFAULT_SETTINGS.flashcardHardText;
+                        await this.plugin.savePluginData();
+                        this.display();
+                    });
+            });
+
+        containerEl.createEl("h3", { text: `${t("NOTES")}` });
+
+        new Setting(containerEl).setName(t("REVIEW_PANE_ON_STARTUP")).addToggle((toggle) =>
+            toggle
+                .setValue(this.plugin.data.settings.enableNoteReviewPaneOnStartup)
+                .onChange(async (value) => {
+                    this.plugin.data.settings.enableNoteReviewPaneOnStartup = value;
+                    await this.plugin.savePluginData();
+                })
+        );
 
         new Setting(containerEl)
             .setName(t("TAGS_TO_REVIEW"))
@@ -450,7 +550,21 @@ export class SRSettingTab extends PluginSettingTab {
                     });
             });
 
-        containerEl.createDiv().innerHTML = <h3>{t("ALGORITHM")}</h3>;
+        containerEl.createEl("h3", { text: `${t("UI_PREFERENCES")}` });
+
+        new Setting(containerEl)
+            .setName(t("INITIALLY_EXPAND_SUBDECKS_IN_TREE"))
+            .setDesc(t("INITIALLY_EXPAND_SUBDECKS_IN_TREE_DESC"))
+            .addToggle((toggle) =>
+                toggle
+                    .setValue(this.plugin.data.settings.initiallyExpandAllSubdecksInTree)
+                    .onChange(async (value) => {
+                        this.plugin.data.settings.initiallyExpandAllSubdecksInTree = value;
+                        await this.plugin.savePluginData();
+                    })
+            );
+
+        containerEl.createEl("h3", { text: `${t("ALGORITHM")}` });
         containerEl.createDiv().innerHTML = t("CHECK_ALGORITHM_WIKI", {
             algo_url:
                 "https://github.com/st3v3nmw/obsidian-spaced-repetition/wiki/Spaced-Repetition-Algorithm",
@@ -613,7 +727,7 @@ export class SRSettingTab extends PluginSettingTab {
                     });
             });
 
-        containerEl.createDiv().innerHTML = <h3>{t("LOGGING")}</h3>;
+        containerEl.createEl("h3", { text: `${t("LOGGING")}` });
         new Setting(containerEl).setName(t("DISPLAY_DEBUG_INFO")).addToggle((toggle) =>
             toggle.setValue(this.plugin.data.settings.showDebugMessages).onChange(async (value) => {
                 this.plugin.data.settings.showDebugMessages = value;

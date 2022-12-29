@@ -82,7 +82,7 @@ export class ReviewQueueListView extends ItemView {
                         fileIsOpen,
                         !deck.activeFolders.has(t("NEW")),
                         deck,
-                        this.plugin,
+                        this.plugin
                     );
                 }
             }
@@ -136,7 +136,7 @@ export class ReviewQueueListView extends ItemView {
                         fileIsOpen,
                         !deck.activeFolders.has(folderTitle),
                         deck,
-                        this.plugin,
+                        this.plugin
                     );
                 }
             }
@@ -196,7 +196,7 @@ export class ReviewQueueListView extends ItemView {
         fileElActive: boolean,
         hidden: boolean,
         deck: ReviewDeck,
-        plugin: SRPlugin,
+        plugin: SRPlugin
     ): void {
         const navFileEl: HTMLElement = folderEl
             .getElementsByClassName("nav-folder-children")[0]
@@ -213,10 +213,10 @@ export class ReviewQueueListView extends ItemView {
         navFileTitle.createDiv("nav-file-title-content").setText(file.basename);
         navFileTitle.addEventListener(
             "click",
-            (event: MouseEvent) => {
+            async (event: MouseEvent) => {
                 event.preventDefault();
                 plugin.lastSelectedReviewDeck = deck.deckName;
-                this.app.workspace.activeLeaf.openFile(file);
+                await this.app.workspace.getLeaf().openFile(file);
                 return false;
             },
             false
@@ -226,7 +226,7 @@ export class ReviewQueueListView extends ItemView {
             "contextmenu",
             (event: MouseEvent) => {
                 event.preventDefault();
-                const fileMenu: Menu = new Menu(this.app);
+                const fileMenu: Menu = new Menu();
                 this.app.workspace.trigger("file-menu", fileMenu, file, "my-context-menu", null);
                 fileMenu.showAtPosition({
                     x: event.pageX,

@@ -17,14 +17,15 @@ export function parse(
     multilineCardSeparator: string,
     multilineReversedCardSeparator: string,
     convertHighlightsToClozes: boolean,
-    convertBoldTextToClozes: boolean
+    convertBoldTextToClozes: boolean,
+    convertCurlyBracketsToClozes: boolean
 ): [CardType, string, number][] {
     let cardText = "";
     const cards: [CardType, string, number][] = [];
     let cardType: CardType | null = null;
     let lineNo = 0;
 
-    const lines: string[] = text.split("\n");
+    const lines: string[] = text.replaceAll("\r\n", "\n").split("\n");
     for (let i = 0; i < lines.length; i++) {
         if (lines[i].length === 0) {
             if (cardType) {
@@ -64,7 +65,8 @@ export function parse(
         } else if (
             cardType === null &&
             ((convertHighlightsToClozes && /==.*?==/gm.test(lines[i])) ||
-                (convertBoldTextToClozes && /\*\*.*?\*\*/gm.test(lines[i])))
+                (convertBoldTextToClozes && /\*\*.*?\*\*/gm.test(lines[i])) ||
+                (convertCurlyBracketsToClozes && /{{.*?}}/gm.test(lines[i])))
         ) {
             cardType = CardType.Cloze;
             lineNo = i;
@@ -74,12 +76,13 @@ export function parse(
         } else if (lines[i] === multilineReversedCardSeparator) {
             cardType = CardType.MultiLineReversed;
             lineNo = i;
-        } else if (lines[i].startsWith("```")) {
-            while (i + 1 < lines.length && !lines[i + 1].startsWith("```")) {
+        } else if (lines[i].startsWith("```") || lines[i].startsWith("~~~")) {
+            const codeBlockClose = lines[i].match(/`+|~+/)[0];
+            while (i + 1 < lines.length && !lines[i + 1].startsWith(codeBlockClose)) {
                 i++;
                 cardText += "\n" + lines[i];
             }
-            cardText += "\n" + "```";
+            cardText += "\n" + codeBlockClose;
             i++;
         }
     }

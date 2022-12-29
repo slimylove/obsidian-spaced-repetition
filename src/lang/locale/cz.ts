@@ -6,6 +6,7 @@ export default {
     DUE_CARDS: "Kartičky po termínu",
     NEW_CARDS: "Nové kartičky",
     TOTAL_CARDS: "Kartiček celkem",
+    BACK: "Back",
     EDIT_LATER: "Upravit později",
     RESET_CARD_PROGRESS: "Vynulovat pokrok kartičky",
     HARD: "Težké",
@@ -47,8 +48,15 @@ export default {
     SETTINGS_HEADER: "Spaced Repetition Plugin - Nastavení",
     CHECK_WIKI: 'Pro více informací jděte na <a href="${wiki_url}">wiki</a>.',
     FOLDERS_TO_IGNORE: "Ignorované složky",
-    FOLDERS_TO_IGNORE_DESC: "Zadejte cesty ke složkám oddělené odřádkováním napříkad. Šablony Meta/Scripts",
+    FOLDERS_TO_IGNORE_DESC:
+        "Zadejte cesty ke složkám oddělené odřádkováním napříkad. Šablony Meta/Scripts",
     FLASHCARDS: "Kartičky",
+    FLASHCARD_EASY_LABEL: "Easy Button Text",
+    FLASHCARD_GOOD_LABEL: "Good Button Text",
+    FLASHCARD_HARD_LABEL: "Hard Button Text",
+    FLASHCARD_EASY_DESC: 'Customize the label for the "Easy" Button',
+    FLASHCARD_GOOD_DESC: 'Customize the label for the "Good" Button',
+    FLASHCARD_HARD_DESC: 'Customize the label for the "Hard" Button',
     FLASHCARD_TAGS: "Tag pro kartičky",
     FLASHCARD_TAGS_DESC:
         "Zadete tagy oodělené mezerou nebo odřádkováním například. #kartičky #balíčke2 #balíček3.",
@@ -73,6 +81,7 @@ export default {
     DISABLE_CLOZE_CARDS: "Vypnout cloze kartičky?",
     CONVERT_HIGHLIGHTS_TO_CLOZES: "Převést ==zvýraznění== na clozes?",
     CONVERT_BOLD_TEXT_TO_CLOZES: "Převést **tučný text** na clozes?",
+    CONVERT_CURLY_BRACKETS_TO_CLOZES: "Převést {{složené závorky}} na clozes?",
     INLINE_CARDS_SEPARATOR: "Oddělovač pro inline kartičky",
     FIX_SEPARATORS_MANUALLY_WARNING:
         "Pozor. Jakmile toto změníte, budete muset ručně upravit všechny existující kartičky.",
@@ -80,8 +89,10 @@ export default {
     MULTILINE_CARDS_SEPARATOR: "Oddělovač pro víceřádkové kartičky",
     MULTILINE_REVERSED_CARDS_SEPARATOR: "Oddělovač pro víceřádkove otočené kartičky",
     NOTES: "Poznámky",
+    REVIEW_PANE_ON_STARTUP: "Enable note review pane on startup",
     TAGS_TO_REVIEW: "Tag pro revizi",
-    TAGS_TO_REVIEW_DESC: "Zadejte tagy oddělené mezerami nebo odřádkováním například #review #tag2 #tag3.",
+    TAGS_TO_REVIEW_DESC:
+        "Zadejte tagy oddělené mezerami nebo odřádkováním například #review #tag2 #tag3.",
     OPEN_RANDOM_NOTE: "Otevřít náhodnou poznámku pro revizi",
     OPEN_RANDOM_NOTE_DESC: "Pokud toto vypnete, poznámky budou řazeny dle důležitosti (PageRank).",
     AUTO_NEXT_NOTE: "Otevřít automaticky další poznámku po dokončení revize",
@@ -92,9 +103,13 @@ export default {
     MAX_N_DAYS_REVIEW_QUEUE: "Maximální počet dní zobrazených v pravém panelu",
     MIN_ONE_DAY: "Počet dní musí být minimálně 1.",
     VALID_NUMBER_WARNING: "Prosím zadejte validní číslo.",
+    UI_PREFERENCES: "Předvolby uživatelského rozhraní",
+    INITIALLY_EXPAND_SUBDECKS_IN_TREE:
+        "Stromy balíčky by měly být zpočátku zobrazeny jako rozbalené",
+    INITIALLY_EXPAND_SUBDECKS_IN_TREE_DESC:
+        "Vypněte toto, chcete-li sbalit vnořené balíčky na stejné kartě. To je užitečné, pokud máte kartičky, které patří k mnoha balíčkům ve stejném souboru.",
     ALGORITHM: "Algoritmus",
-    CHECK_ALGORITHM_WIKI:
-        'Pro více informací jděte na <a href="${algo_url}">popis algoritmu</a>.',
+    CHECK_ALGORITHM_WIKI: 'Pro více informací jděte na <a href="${algo_url}">popis algoritmu</a>.',
     BASE_EASE: "Základní složitost",
     BASE_EASE_DESC: "minimum = 130, nejlépe přibližně 250.",
     BASE_EASE_MIN_WARNING: "Základní složitost musí být minimálně 130.",

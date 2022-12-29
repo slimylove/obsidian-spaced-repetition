@@ -17,7 +17,7 @@ import {
 } from "chart.js";
 
 import type SRPlugin from "src/main";
-import { getKeysPreserveType } from "src/utils";
+import { getKeysPreserveType, getTypedObjectEntries } from "src/utils";
 import { textInterval } from "src/scheduling";
 import { t } from "src/lang/helpers";
 
@@ -53,7 +53,9 @@ export class StatsModal extends Modal {
         this.titleEl.setText(`${t("STATS_TITLE")} `);
         this.titleEl.innerHTML += (
             <select id="chartPeriod">
-                <option value="month" selected>{t("MONTH")}</option>
+                <option value="month" selected>
+                    {t("MONTH")}
+                </option>
                 <option value="quarter">{t("QUARTER")}</option>
                 <option value="year">{t("YEAR")}</option>
                 <option value="lifetime">{t("LIFETIME")}</option>
@@ -81,7 +83,7 @@ export class StatsModal extends Modal {
         }
 
         const dueDatesFlashcardsCopy: Record<number, number> = { 0: 0 };
-        for (const [dueOffset, dueCount] of Object.entries(this.plugin.dueDatesFlashcards)) {
+        for (const [dueOffset, dueCount] of getTypedObjectEntries(this.plugin.dueDatesFlashcards)) {
             if (dueOffset <= 0) {
                 dueDatesFlashcardsCopy[0] += dueCount;
             } else {
@@ -134,7 +136,7 @@ export class StatsModal extends Modal {
         // Add intervals
         const average_interval: string = textInterval(
                 Math.round(
-                    (Object.entries(cardStats.intervals)
+                    (getTypedObjectEntries(cardStats.intervals)
                         .map(([interval, count]) => interval * count)
                         .reduce((a, b) => a + b, 0) /
                         scheduledCount) *
@@ -169,7 +171,7 @@ export class StatsModal extends Modal {
         }
         const average_ease: number =
             Math.round(
-                Object.entries(cardStats.eases)
+                getTypedObjectEntries(cardStats.eases)
                     .map(([ease, count]) => ease * count)
                     .reduce((a, b) => a + b, 0) / scheduledCount
             ) || 0;
@@ -288,7 +290,7 @@ function createStatsChart(
     });
 
     if (shouldFilter) {
-        const chartPeriodEl = document.getElementById("chartPeriod");
+        const chartPeriodEl = document.getElementById("chartPeriod") as HTMLSelectElement;
         chartPeriodEl.addEventListener("click", () => {
             let filteredLabels, filteredData;
             const chartPeriod = chartPeriodEl.value;

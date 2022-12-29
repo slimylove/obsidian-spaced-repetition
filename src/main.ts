@@ -33,12 +33,14 @@ interface PluginData {
     // should work as long as user doesn't modify card's text
     // which covers most of the cases
     buryList: string[];
+    historyDeck: string | null;
 }
 
 const DEFAULT_DATA: PluginData = {
     settings: DEFAULT_SETTINGS,
     buryDate: "",
     buryList: [],
+    historyDeck: null,
 };
 
 export interface SchedNote {
@@ -94,11 +96,6 @@ export default class SRPlugin extends Plugin {
                 new FlashcardModal(this.app, this).open();
             }
         });
-
-        this.registerView(
-            REVIEW_QUEUE_VIEW_TYPE,
-            (leaf) => (this.reviewQueueView = new ReviewQueueListView(leaf, this))
-        );
 
         if (!this.data.settings.disableFileMenuReviewOptions) {
             this.registerEvent(
@@ -414,8 +411,8 @@ export default class SRPlugin extends Plugin {
                 dueFlashcardsCount: this.deckTree.dueFlashcardsCount,
             })
         );
-        this.reviewQueueView.redraw();
 
+        if (this.data.settings.enableNoteReviewPaneOnStartup) this.reviewQueueView.redraw();
         this.syncLock = false;
     }
 
@@ -582,7 +579,7 @@ export default class SRPlugin extends Plugin {
             const index = this.data.settings.openRandomNote
                 ? Math.floor(Math.random() * deck.dueNotesCount)
                 : 0;
-            this.app.workspace.activeLeaf.openFile(deck.scheduledNotes[index].note);
+            await this.app.workspace.getLeaf().openFile(deck.scheduledNotes[index].note);
             return;
         }
 
@@ -590,7 +587,7 @@ export default class SRPlugin extends Plugin {
             const index = this.data.settings.openRandomNote
                 ? Math.floor(Math.random() * deck.newNotes.length)
                 : 0;
-            this.app.workspace.activeLeaf.openFile(deck.newNotes[index]);
+            this.app.workspace.getLeaf().openFile(deck.newNotes[index]);
             return;
         }
 
@@ -640,12 +637,13 @@ export default class SRPlugin extends Plugin {
         const now: number = Date.now();
         const parsedCards: [CardType, string, number][] = parse(
             fileText,
-            settings.singlelineCardSeparator,
-            settings.singlelineReversedCardSeparator,
+            settings.singleLineCardSeparator,
+            settings.singleLineReversedCardSeparator,
             settings.multilineCardSeparator,
             settings.multilineReversedCardSeparator,
             settings.convertHighlightsToClozes,
-            settings.convertBoldTextToClozes
+            settings.convertBoldTextToClozes,
+            settings.convertCurlyBracketsToClozes
         );
         for (const parsedCard of parsedCards) {
             deckPath = noteDeckPath;
@@ -684,6 +682,9 @@ export default class SRPlugin extends Plugin {
                 if (settings.convertBoldTextToClozes) {
                     siblings.push(...cardText.matchAll(/\*\*(.*?)\*\*/gm));
                 }
+                if (settings.convertCurlyBracketsToClozes) {
+                    siblings.push(...cardText.matchAll(/{{(.*?)}}/gm));
+                }
                 siblings.sort((a, b) => {
                     if (a.index < b.index) {
                         return -1;
@@ -702,29 +703,37 @@ export default class SRPlugin extends Plugin {
                         cardText.substring(0, deletionStart) +
                         "<span style='color:#2196f3'>[...]</span>" +
                         cardText.substring(deletionEnd);
-                    front = front.replace(/==/gm, "").replace(/\*\*/gm, "");
+                    front = front
+                        .replace(/==/gm, "")
+                        .replace(/\*\*/gm, "")
+                        .replace(/{{/gm, "")
+                        .replace(/}}/gm, "");
                     back =
                         cardText.substring(0, deletionStart) +
                         "<span style='color:#2196f3'>" +
                         cardText.substring(deletionStart, deletionEnd) +
                         "</span>" +
                         cardText.substring(deletionEnd);
-                    back = back.replace(/==/gm, "").replace(/\*\*/gm, "");
+                    back = back
+                        .replace(/==/gm, "")
+                        .replace(/\*\*/gm, "")
+                        .replace(/{{/gm, "")
+                        .replace(/}}/gm, "");
                     siblingMatches.push([front, back]);
                 }
             } else {
                 let idx: number;
                 if (cardType === CardType.SingleLineBasic) {
-                    idx = cardText.indexOf(settings.singlelineCardSeparator);
+                    idx = cardText.indexOf(settings.singleLineCardSeparator);
                     siblingMatches.push([
                         cardText.substring(0, idx),
-                        cardText.substring(idx + settings.singlelineCardSeparator.length),
+                        cardText.substring(idx + settings.singleLineCardSeparator.length),
                     ]);
                 } else if (cardType === CardType.SingleLineReversed) {
-                    idx = cardText.indexOf(settings.singlelineReversedCardSeparator);
+                    idx = cardText.indexOf(settings.singleLineReversedCardSeparator);
                     const side1: string = cardText.substring(0, idx),
                         side2: string = cardText.substring(
-                            idx + settings.singlelineReversedCardSeparator.length
+                            idx + settings.singleLineReversedCardSeparator.length
                         );
                     siblingMatches.push([side1, side2]);
                     siblingMatches.push([side2, side1]);
@@ -873,14 +882,20 @@ export default class SRPlugin extends Plugin {
     }
 
     initView(): void {
-        if (this.app.workspace.getLeavesOfType(REVIEW_QUEUE_VIEW_TYPE).length) {
-            return;
-        }
+        this.registerView(
+            REVIEW_QUEUE_VIEW_TYPE,
+            (leaf) => (this.reviewQueueView = new ReviewQueueListView(leaf, this))
+        );
 
-        this.app.workspace.getRightLeaf(false).setViewState({
-            type: REVIEW_QUEUE_VIEW_TYPE,
-            active: true,
-        });
+        if (
+            this.data.settings.enableNoteReviewPaneOnStartup &&
+            app.workspace.getLeavesOfType(REVIEW_QUEUE_VIEW_TYPE).length == 0
+        ) {
+            this.app.workspace.getRightLeaf(false).setViewState({
+                type: REVIEW_QUEUE_VIEW_TYPE,
+                active: true,
+            });
+        }
     }
 }
 

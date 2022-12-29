@@ -57,6 +57,7 @@ export class FlashcardModal extends Modal {
         this.ignoreStats = ignoreStats;
 
         this.titleEl.setText(t("DECKS"));
+        this.titleEl.addClass("sr-centered");
 
         if (Platform.isMobile) {
             this.contentEl.style.display = "block";
@@ -106,6 +107,18 @@ export class FlashcardModal extends Modal {
     }
 
     decksList(): void {
+        const aimDeck = this.plugin.deckTree.subdecks.filter(
+            (deck) => deck.deckName === this.plugin.data.historyDeck
+        );
+        if (this.plugin.data.historyDeck && aimDeck.length > 0) {
+            const deck = aimDeck[0];
+            this.currentDeck = deck;
+            this.checkDeck = deck.parent;
+            this.setupCardsView();
+            deck.nextCard(this);
+            return;
+        }
+
         this.mode = FlashcardModalMode.DecksList;
         this.titleEl.setText(t("DECKS"));
         this.titleEl.innerHTML += (
@@ -113,7 +126,7 @@ export class FlashcardModal extends Modal {
                 <span
                     style="background-color:#4caf50;color:#ffffff;"
                     aria-label={t("DUE_CARDS")}
-                    class="tag-pane-tag-count tree-item-flair"
+                    class="tag-pane-tag-count tree-item-flair sr-deck-counts"
                 >
                     {this.plugin.deckTree.dueFlashcardsCount.toString()}
                 </span>
@@ -144,13 +157,40 @@ export class FlashcardModal extends Modal {
     setupCardsView(): void {
         this.contentEl.innerHTML = "";
 
+        const historyLinkView = this.contentEl.createEl("button");
+        historyLinkView.addClass("sr-back-btn");
+        historyLinkView.setAttribute("aria-label", t("BACK"));
+        historyLinkView.innerHTML += (
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewbox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="svg-icon lucide-arrow-left"
+            >
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+        );
+        historyLinkView.addEventListener("click", (e: PointerEvent) => {
+            if (e.pointerType.length > 0) {
+                this.plugin.data.historyDeck = "";
+                this.decksList();
+            }
+        });
+
         this.fileLinkView = this.contentEl.createDiv("sr-link");
         this.fileLinkView.setText(t("EDIT_LATER"));
         if (this.plugin.data.settings.showFileNameInFileLink) {
             this.fileLinkView.setAttribute("aria-label", t("EDIT_LATER"));
         }
         this.fileLinkView.addEventListener("click", async () => {
-            const activeLeaf: WorkspaceLeaf = this.plugin.app.workspace.activeLeaf;
+            const activeLeaf: WorkspaceLeaf = this.plugin.app.workspace.getLeaf();
             if (this.plugin.app.workspace.getActiveFile() === null)
                 await activeLeaf.openFile(this.currentCard.note);
             else {
@@ -190,7 +230,7 @@ export class FlashcardModal extends Modal {
 
         this.hardBtn = document.createElement("button");
         this.hardBtn.setAttribute("id", "sr-hard-btn");
-        this.hardBtn.setText(t("HARD"));
+        this.hardBtn.setText(this.plugin.data.settings.flashcardHardText);
         this.hardBtn.addEventListener("click", () => {
             this.processReview(ReviewResponse.Hard);
         });
@@ -198,7 +238,7 @@ export class FlashcardModal extends Modal {
 
         this.goodBtn = document.createElement("button");
         this.goodBtn.setAttribute("id", "sr-good-btn");
-        this.goodBtn.setText(t("GOOD"));
+        this.goodBtn.setText(this.plugin.data.settings.flashcardGoodText);
         this.goodBtn.addEventListener("click", () => {
             this.processReview(ReviewResponse.Good);
         });
@@ -206,7 +246,7 @@ export class FlashcardModal extends Modal {
 
         this.easyBtn = document.createElement("button");
         this.easyBtn.setAttribute("id", "sr-easy-btn");
-        this.easyBtn.setText(t("EASY"));
+        this.easyBtn.setText(this.plugin.data.settings.flashcardEasyText);
         this.easyBtn.addEventListener("click", () => {
             this.processReview(ReviewResponse.Easy);
         });
@@ -462,8 +502,10 @@ export class FlashcardModal extends Modal {
                     el.addEventListener(
                         "click",
                         (ev) =>
-                            (ev.target.style.minWidth =
-                                ev.target.style.minWidth === "100%" ? null : "100%")
+                            ((ev.target as HTMLElement).style.minWidth =
+                                (ev.target as HTMLElement).style.minWidth === "100%"
+                                    ? null
+                                    : "100%")
                     );
                 }
             );
@@ -650,16 +692,20 @@ export class Deck {
         const deckViewSelf: HTMLElement = deckView.createDiv(
             "tree-item-self tag-pane-tag is-clickable"
         );
-        let collapsed = true;
+        const shouldBeInitiallyExpanded: boolean =
+            modal.plugin.data.settings.initiallyExpandAllSubdecksInTree;
+        let collapsed = shouldBeInitiallyExpanded;
         let collapseIconEl: HTMLElement | null = null;
         if (this.subdecks.length > 0) {
             collapseIconEl = deckViewSelf.createDiv("tree-item-icon collapse-icon");
             collapseIconEl.innerHTML = COLLAPSE_ICON;
-            (collapseIconEl.childNodes[0] as HTMLElement).style.transform = "rotate(-90deg)";
+            (collapseIconEl.childNodes[0] as HTMLElement).style.transform =
+                shouldBeInitiallyExpanded ? "" : "rotate(-90deg)";
         }
 
         const deckViewInner: HTMLElement = deckViewSelf.createDiv("tree-item-inner");
         deckViewInner.addEventListener("click", () => {
+            modal.plugin.data.historyDeck = this.deckName;
             modal.currentDeck = this;
             modal.checkDeck = this.parent;
             modal.setupCardsView();
@@ -692,7 +738,7 @@ export class Deck {
         );
 
         const deckViewChildren: HTMLElement = deckView.createDiv("tree-item-children");
-        deckViewChildren.style.display = "none";
+        deckViewChildren.style.display = shouldBeInitiallyExpanded ? "block" : "none";
         if (this.subdecks.length > 0) {
             collapseIconEl.addEventListener("click", () => {
                 if (collapsed) {
@@ -724,6 +770,7 @@ export class Deck {
             }
 
             if (this.parent == modal.checkDeck) {
+                modal.plugin.data.historyDeck = "";
                 modal.decksList();
             } else {
                 this.parent.nextCard(modal);
@@ -811,16 +858,31 @@ export class Deck {
 
         if (modal.ignoreStats) {
             // Same for mobile/desktop
-            modal.hardBtn.setText(`${t("HARD")}`);
-            modal.easyBtn.setText(`${t("EASY")}`);
+            modal.hardBtn.setText(`${modal.plugin.data.settings.flashcardHardText}`);
+            modal.easyBtn.setText(`${modal.plugin.data.settings.flashcardEasyText}`);
         } else if (Platform.isMobile) {
             modal.hardBtn.setText(textInterval(hardInterval, true));
             modal.goodBtn.setText(textInterval(goodInterval, true));
             modal.easyBtn.setText(textInterval(easyInterval, true));
         } else {
-            modal.hardBtn.setText(`${t("HARD")} - ${textInterval(hardInterval, false)}`);
-            modal.goodBtn.setText(`${t("GOOD")} - ${textInterval(goodInterval, false)}`);
-            modal.easyBtn.setText(`${t("EASY")} - ${textInterval(easyInterval, false)}`);
+            modal.hardBtn.setText(
+                `${modal.plugin.data.settings.flashcardHardText} - ${textInterval(
+                    hardInterval,
+                    false
+                )}`
+            );
+            modal.goodBtn.setText(
+                `${modal.plugin.data.settings.flashcardGoodText} - ${textInterval(
+                    goodInterval,
+                    false
+                )}`
+            );
+            modal.easyBtn.setText(
+                `${modal.plugin.data.settings.flashcardEasyText} - ${textInterval(
+                    easyInterval,
+                    false
+                )}`
+            );
         }
 
         if (modal.plugin.data.settings.showContextInCards)
