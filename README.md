@@ -1,3 +1,6 @@
+自用修改:
+1. 支持<!-- reviewSep -->作为分隔符方式, 制作卡片
+
 # Flashcard-Based and Note-Based Spaced Repetition Plugin
 
 <img src="https://img.shields.io/github/downloads/st3v3nmw/obsidian-spaced-repetition/total" /> <img src="https://img.shields.io/github/downloads/st3v3nmw/obsidian-spaced-repetition/latest/total?style=flat-square" /> <img src="https://img.shields.io/github/manifest-json/v/st3v3nmw/obsidian-spaced-repetition?style=flat-square" />
